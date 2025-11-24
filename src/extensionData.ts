@@ -1,9 +1,8 @@
 import * as vscode from "vscode";
 import * as path from "path";
-import isWsl from "is-wsl";
 import {IPackageJson} from "package-json-type";
 
-import {readJsonFile} from "./utils";
+import {isWsl, readJsonFile} from "./utils";
 import {ExtensionMetaData, ExtensionPaths, ExtensionMetaDataValue} from "./interfaces/extensionMetaData";
 
 export class ExtensionData {
@@ -107,7 +106,7 @@ export class ExtensionData {
 		// development path, not the actual user extensions path. So we use the custom
 		// DEV_USER_EXTENSIONS_PATH env variable to override it.
 		const userExtensionsPath =
-			devUserExtensionsPath || (isWsl ? path.join(vscode.env.appRoot, "../../", "extensions") : path.join(this.extensionPath, "../"));
+			devUserExtensionsPath || (isWsl() ? path.join(vscode.env.appRoot, "../../", "extensions") : path.join(this.extensionPath, "../"));
 
 		this.extensionDiscoveryPaths.set("userExtensionsPath", userExtensionsPath);
 		// The path to the built-in extensions.
@@ -115,7 +114,7 @@ export class ExtensionData {
 		this.extensionDiscoveryPaths.set("builtInExtensionsPath", path.join(vscode.env.appRoot, "extensions"));
 
 		// Only set these if running in WSL
-		if (isWsl) {
+		if (isWsl()) {
 			this.extensionDiscoveryPaths.set("WindowsUserExtensionsPathFromWsl", path.dirname(process.env.VSCODE_WSL_EXT_LOCATION!));
 			this.extensionDiscoveryPaths.set("WindowsBuiltInExtensionsPathFromWsl", path.join(process.env.VSCODE_CWD!, "resources/app/extensions"));
 		}
