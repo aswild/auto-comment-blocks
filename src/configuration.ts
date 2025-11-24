@@ -4,7 +4,6 @@
 import * as vscode from "vscode";
 import * as fs from "node:fs";
 import * as path from "path";
-import isWsl from "is-wsl";
 import {IPackageJson} from "package-json-type";
 
 import {Rules} from "./rules";
@@ -310,7 +309,7 @@ export class Configuration {
 		const extensions: any[] = [];
 
 		// If running in WSL...
-		if (isWsl) {
+		if (utils.isWsl()) {
 			// Get the Windows user and built-in extensions paths.
 			const windowsUserExtensionsPath = this.extensionData.get("WindowsUserExtensionsPathFromWsl");
 			const windowsBuiltInExtensionsPath = this.extensionData.get("WindowsBuiltInExtensionsPathFromWsl");
@@ -975,7 +974,7 @@ export class Configuration {
 
 		let extensionsPaths = {};
 
-		if (isWsl) {
+		if (utils.isWsl()) {
 			// Get the Windows user and built-in extensions paths.
 			const windowsUserExtensionsPath = this.extensionData.get("WindowsUserExtensionsPathFromWsl");
 			const windowsBuiltInExtensionsPath = this.extensionData.get("WindowsBuiltInExtensionsPathFromWsl");

@@ -1,9 +1,8 @@
 import * as vscode from "vscode";
 import * as path from "path";
-import isWsl from "is-wsl";
 import {IPackageJson} from "package-json-type";
 
-import {readJsonFile} from "./utils";
+import * as utils from "./utils";
 
 export class ExtensionData {
 	/**
@@ -33,7 +32,7 @@ export class ExtensionData {
 	private getExtensionPackageJsonData(): IPackageJson {
 		const extensionPath = path.join(__dirname, "../../");
 
-		const packageJSON: IPackageJson = readJsonFile(path.join(extensionPath, "package.json"));
+		const packageJSON: IPackageJson = utils.readJsonFile(path.join(extensionPath, "package.json"));
 
 		// Set the id (publisher.name) into the packageJSON object as a new `id` key.
 		packageJSON.id = `${packageJSON.publisher}.${packageJSON.name}`;
@@ -66,7 +65,7 @@ export class ExtensionData {
 	 */
 	private createExtensionData() {
 		// The path to the user extensions.
-		const userExtensionsPath = isWsl
+		const userExtensionsPath = utils.isWsl()
 			? path.join(vscode.env.appRoot, "../../", "extensions")
 			: path.join(this.packageJsonData.extensionPath, "../");
 
@@ -83,7 +82,7 @@ export class ExtensionData {
 			builtInExtensionsPath: path.join(vscode.env.appRoot, "extensions"),
 
 			// Only set these if running in WSL.
-			...(isWsl && {
+			...(utils.isWsl() && {
 				WindowsUserExtensionsPathFromWsl: path.dirname(process.env.VSCODE_WSL_EXT_LOCATION!),
 				WindowsBuiltInExtensionsPathFromWsl: path.join(process.env.VSCODE_CWD!, "resources/app/extensions"),
 			}),

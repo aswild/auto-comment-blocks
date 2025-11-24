@@ -2,6 +2,19 @@ import * as fs from "node:fs";
 import * as jsonc from "jsonc-parser";
 
 /**
+ * Do a more reliable check for a WSL environment that's more reliable than the "is-wsl" package.
+ *
+ * @returns Whether this look like WSL2.
+ */
+export function isWsl(): boolean {
+	// TODO: is there some way to cache this?
+	return !!process.env.WSL_DISTRO_NAME
+		|| fs.existsSync("/mnt/wsl")
+		|| fs.existsSync("/mnt/wslg")
+		|| fs.existsSync("/usr/bin/wslinfo");
+}
+
+/**
  * Read the file and parse the JSON.
  *
  * @param {string} filepath The path of the file.
