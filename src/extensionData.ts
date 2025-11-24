@@ -30,7 +30,7 @@ export class ExtensionData {
 	 * @returns {IPackageJson} The package.json data for this extension, with extra custom keys.
 	 */
 	private getExtensionPackageJsonData(): IPackageJson {
-		const extensionPath = path.join(__dirname, "../../");
+		const extensionPath = path.join(__dirname, "../");
 
 		const packageJSON: IPackageJson = utils.readJsonFile(path.join(extensionPath, "package.json"));
 
