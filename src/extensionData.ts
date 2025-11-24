@@ -40,7 +40,7 @@ export class ExtensionData {
 		// For this extension's path, we use `__dirname` and go up two levels
 		// (from "out/src" to the extension root). This path is also used to locate all other
 		// user-installed extensions later for the `userExtensionsPath` discovery path.
-		this.extensionPath = extensionPath ?? path.join(__dirname, "../../");
+		this.extensionPath = extensionPath ?? path.join(__dirname, "../");
 
 		this.packageJsonData = this.getExtensionPackageJsonData();
 
