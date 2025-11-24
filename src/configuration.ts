@@ -864,7 +864,7 @@ export class Configuration {
 			this.normalizeOnEnterRules(langConfig.onEnterRules);
 		}
 
-		logger.debug(`The language config for ${langId}:`, langConfig);
+		//logger.debug(`The language config for ${langId}:`, langConfig);
 
 		return vscode.languages.setLanguageConfiguration(langId, langConfig);
 	}
@@ -1014,7 +1014,7 @@ export class Configuration {
 
 		// Log the objects for debugging purposes.
 		logger.debug("The language config filepaths found are:", this.languageConfigFilePaths);
-		logger.debug("The language configs found are:", this.languageConfigs);
+		//logger.debug("The language configs found are:", this.languageConfigs);
 		logger.debug("The supported languages for multi-line blocks:", utils.convertMapToReversedObject(this.singleLineBlocksMap));
 		logger.debug("The supported languages for single-line blocks:", Object.fromEntries(this.multiLineBlocksMap));
 	}
