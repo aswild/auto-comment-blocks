@@ -32,7 +32,6 @@
 	],
 	"main": "./out/extension.js",
 	"files": [
-		"auto-generated-language-definitions/",
 		"config/",
 		"img/",
 		"out/",
