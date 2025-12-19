@@ -120,16 +120,13 @@
 		"compile": "npm run check && node esbuild.js",
 		"package": "vsce package",
 		"vscode:prepublish": "npm run check && node esbuild.js --production",
-		"watch": "node esbuild.js --watch",
-		"test": "node ./out/test/extension.test.js"
+		"watch": "node esbuild.js --watch"
 	},
 	"devDependencies": {
-		"@types/mocha": "^10.0.9",
 		"@types/node": "^22.9.0",
 		"@types/vscode": "^1.96",
 		"@vscode/vsce": "^3.7.1",
 		"esbuild": "^0.27.0",
-		"mocha": "^10.8.2",
 		"typescript": "^5.7"
 	},
 	"dependencies": {
