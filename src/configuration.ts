@@ -2,7 +2,7 @@
 /* https://code.visualstudio.com/api/language-extensions/language-configuration-guide */
 
 import * as vscode from "vscode";
-import * as fs from "node:fs";
+import * as fsPromises from "node:fs/promises";
 import * as path from "path";
 import {IPackageJson} from "package-json-type";
 
@@ -10,6 +10,8 @@ import {Rules} from "./rules";
 import {logger} from "./logger";
 import * as utils from "./utils";
 import {ExtensionData} from "./extensionData";
+
+type ExtensionInfo = { id: string; extensionPath: string; packageJSON: IPackageJson; }
 
 export class Configuration {
 	/**************
@@ -73,9 +75,14 @@ export class Configuration {
 	public constructor() {
 		// Always output extension information to channel on activate.
 		logger.debug(`Extension details:`, this.extensionData.getAll());
+	}
 
-		this.findAllLanguageConfigFilePaths();
-		this.setLanguageConfigDefinitions();
+	/**
+	 * Initialize and load the configuration. Must be called before the configuration can be used.
+	 */
+	public async load(extensionData: ExtensionData) {
+		await this.findAllLanguageConfigFilePaths();
+		await this.setLanguageConfigDefinitions();
 
 		this.setMultiLineCommentLanguageDefinitions();
 		this.setSingleLineCommentLanguageDefinitions();
@@ -295,8 +302,9 @@ export class Configuration {
 	 * Find all language config file paths from vscode installed extensions
 	 * (built-in and 3rd party).
 	 */
-	private findAllLanguageConfigFilePaths() {
+	private async findAllLanguageConfigFilePaths() {
 		const extensions: any[] = [];
+		logger.debug("Start finding extensions");
 
 		// If running in WSL...
 		if (utils.isWsl()) {
@@ -305,8 +313,8 @@ export class Configuration {
 			const windowsBuiltInExtensionsPath = this.extensionData.get("WindowsBuiltInExtensionsPathFromWsl");
 
 			// Read the paths and create arrays of the extensions.
-			const windowsBuiltInExtensions = this.readExtensionsFromDirectory(windowsBuiltInExtensionsPath);
-			const windowsUserExtensions = this.readExtensionsFromDirectory(windowsUserExtensionsPath);
+			const windowsBuiltInExtensions = await this.readExtensionsFromDirectory(windowsBuiltInExtensionsPath);
+			const windowsUserExtensions = await this.readExtensionsFromDirectory(windowsUserExtensionsPath);
 
 			// Combine the built-in and user extensions into the extensions array.
 			extensions.push(...windowsBuiltInExtensions, ...windowsUserExtensions);
@@ -316,8 +324,10 @@ export class Configuration {
 		const builtInExtensionsPath = this.extensionData.get("builtInExtensionsPath");
 
 		// Read the paths and create arrays of the extensions.
-		const userExtensions = this.readExtensionsFromDirectory(userExtensionsPath);
-		const builtInExtensions = this.readExtensionsFromDirectory(builtInExtensionsPath);
+		const userExtensions = await this.readExtensionsFromDirectory(userExtensionsPath);
+		const builtInExtensions = await this.readExtensionsFromDirectory(builtInExtensionsPath);
+
+		logger.debug("Finished finding extensions");
 
 		// Add all installed extensions (including built-in ones) into the extensions array.
 		// If running WSL, these will be the WSL-installed extensions.
@@ -468,37 +478,38 @@ export class Configuration {
 	 *
 	 * @param {string} extensionsPath The path where extensions are stored.
 	 *
-	 * @returns {Array<{ id: string; extensionPath: string; packageJSON: IPackageJson }>}
+	 * @returns {Array<ExtensionInfo>}
 	 */
-	private readExtensionsFromDirectory(extensionsPath: string): Array<{id: string; extensionPath: string; packageJSON: IPackageJson}> {
-		// Create an array to hold the found extensions.
-		const foundExtensions: Array<{id: string; extensionPath: string; packageJSON: IPackageJson}> = [];
-
-		fs.readdirSync(extensionsPath).forEach((extensionName) => {
-			const extensionPath = path.join(extensionsPath, extensionName);
-
-			// If the extensionName is a directory...
-			if (fs.statSync(extensionPath).isDirectory()) {
-				// If the extensionName starts with a dot, skip it.
-				if (extensionName.startsWith(".")) {
-					return;
-				}
-
-				// Get the package.json file path.
-				const packageJSONPath = path.join(extensionPath, "package.json");
-
-				// If the package.json file exists...
-				if (fs.existsSync(packageJSONPath)) {
-					const packageJSON: IPackageJson = utils.readJsonFile(packageJSONPath);
-
-					const id = `${packageJSON.publisher}.${packageJSON.name}`;
-
-					// Push the extension data object into the array.
-					foundExtensions.push({id, extensionPath, packageJSON});
-				}
+	private async readExtensionsFromDirectory(extensionsPath: string): Promise<ExtensionInfo[]> {
+		//logger.debug(`Read extensions in ${extensionsPath}`);
+		const entries = await fsPromises.readdir(extensionsPath, 'utf8');
+		const ret: (ExtensionInfo | null)[] = await Promise.all(entries.map(async (name) => {
+			// If the extensionName starts with a dot, skip it.
+			if (name.startsWith(".")) {
+				return null;
 			}
-		});
 
+			const extensionPath = path.join(extensionsPath, name);
+			const packageJSONPath = path.join(extensionPath, "package.json");
+
+			return await utils.readJsonFileAsync(packageJSONPath)
+				.then((packageJSON: IPackageJson) => {
+					const id = `${packageJSON.publisher}.${packageJSON.name}`
+					const extInfo: ExtensionInfo = { id, extensionPath, packageJSON };
+					return extInfo;
+				})
+				.catch((err) => {
+					if (['ENOENT', 'ENOTDIR'].includes(err.code)) {
+						// skip nonexistent files, or if `name` was a file rather than a directory
+					} else {
+						// otherwise propagate the error
+						throw err;
+					}
+					return null;
+				});
+		}));
+
+		const foundExtensions = ret.filter(x => x !== null);
 		return foundExtensions;
 	}
 
@@ -979,7 +990,7 @@ export class Configuration {
 			},
 			"Other System Env Variables": process.env,
 		};
-		logger.debug("Environment:", env);
+		//logger.debug("Environment:", env);
 
 		// Log the extension's user configuration settings.
 		logger.debug("Configuration settings:", this.getConfiguration());

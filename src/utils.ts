@@ -1,4 +1,5 @@
 import * as fs from "node:fs";
+import * as fsPromises from "node:fs/promises";
 import * as jsonc from "jsonc-parser";
 import {logger} from "./logger";
 import {window} from "vscode";
@@ -28,6 +29,40 @@ export function readJsonFile(filepath: string): any {
 	const jsonErrors: jsonc.ParseError[] = [];
 
 	const fileContent = fs.readFileSync(filepath).toString();
+	const jsonContents = jsonc.parse(fileContent, jsonErrors) ?? {};
+
+	if (jsonErrors.length > 0) {
+		const errorMessages = constructJsonParseErrorMsg(filepath, fileContent, jsonErrors);
+		const errorMsg = "Failed to parse a required JSON file";
+		const error = new Error(`${errorMsg}: "${filepath}"\n\n\tParse Errors:\n\n${errorMessages}\n\tStack Trace:`);
+
+		logger.error(error.stack);
+
+		window
+			.showErrorMessage(
+				`${errorMsg}. The extension cannot continue. Please check the "Auto Comment Blocks" Output Channel for errors.`,
+				"OK",
+				"Open Output Channel"
+			)
+			.then((selection) => {
+				if (selection === "Open Output Channel") {
+					logger.showChannel();
+				}
+			});
+
+		throw error;
+	}
+
+	return jsonContents;
+}
+
+/**
+ * Like readJsonFile but returns a Promise.
+ */
+export async function readJsonFileAsync(filepath: string): Promise<any> {
+	const jsonErrors: jsonc.ParseError[] = [];
+
+	const fileContent = await fsPromises.readFile(filepath, 'utf8');
 	const jsonContents = jsonc.parse(fileContent, jsonErrors) ?? {};
 
 	if (jsonErrors.length > 0) {
