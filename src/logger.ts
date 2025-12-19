@@ -113,7 +113,7 @@ class Logger {
 		if (!this.outputChannel) {
 			this.setupOutputChannel();
 		}
-		const time = new Date().toLocaleTimeString();
+		const time = new Date().toISOString();
 
 		// Output the log message to the output channel.
 		this.outputChannel.appendLine(`["${level}" - ${time}] ${message}`);
