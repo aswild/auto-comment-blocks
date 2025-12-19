@@ -2,15 +2,17 @@
 /* https://code.visualstudio.com/api/language-extensions/language-configuration-guide */
 
 import * as vscode from "vscode";
-import * as fs from "node:fs";
+import * as fsPromises from "node:fs/promises";
 import * as path from "path";
 import isWsl from "is-wsl";
-import {IPackageJson} from "package-json-type";
+import { IPackageJson } from "package-json-type";
 
-import {Rules} from "./rules";
-import {logger} from "./logger";
+import { Rules } from "./rules";
+import { logger } from "./logger";
 import * as utils from "./utils";
-import {ExtensionData} from "./extensionData";
+import { ExtensionData } from "./extensionData";
+
+type ExtensionInfo = { id: string; extensionPath: string; packageJSON: IPackageJson; }
 
 export class Configuration {
 	/**************
@@ -74,8 +76,13 @@ export class Configuration {
 	public constructor() {
 		// Always output extension information to channel on activate.
 		logger.debug(`Extension details:`, this.extensionData.getAll());
+	}
 
-		this.findAllLanguageConfigFilePaths();
+	/**
+	 * Initialize and load the configuration. Must be called before the configuration can be used.
+	 */
+	public async load(extensionData: ExtensionData) {
+		await this.findAllLanguageConfigFilePaths();
 		this.setLanguageConfigDefinitions();
 
 		this.setMultiLineCommentLanguageDefinitions();
@@ -297,37 +304,30 @@ export class Configuration {
 	 * Find all language config file paths from vscode installed extensions
 	 * (built-in and 3rd party).
 	 */
-	private findAllLanguageConfigFilePaths() {
-		const extensions: any[] = [];
-
+	private async findAllLanguageConfigFilePaths() {
 		logger.info("Start reading extensions");
+		const extensionDirs: string[] = [];
 
-		// If running in WSL...
 		if (isWsl) {
-			// Get the Windows user and built-in extensions paths.
-			const windowsUserExtensionsPath = this.extensionData.get("WindowsUserExtensionsPathFromWsl");
-			const windowsBuiltInExtensionsPath = this.extensionData.get("WindowsBuiltInExtensionsPathFromWsl");
-
-			// Read the paths and create arrays of the extensions.
-			const windowsBuiltInExtensions = this.readExtensionsFromDirectory(windowsBuiltInExtensionsPath);
-			const windowsUserExtensions = this.readExtensionsFromDirectory(windowsUserExtensionsPath);
-
-			// Combine the built-in and user extensions into the extensions array.
-			extensions.push(...windowsBuiltInExtensions, ...windowsUserExtensions);
+			// In WSL, get the native Windows built-in and user extensions
+			extensionDirs.push(
+				this.extensionData.get("WindowsBuiltInExtensionsPathFromWsl"),
+				this.extensionData.get("WindowsUserExtensionsPathFromWsl"),
+			);
 		}
 
-		const userExtensionsPath = this.extensionData.get("userExtensionsPath");
-		const builtInExtensionsPath = this.extensionData.get("builtInExtensionsPath");
+		extensionDirs.push(
+			this.extensionData.get("builtInExtensionsPath"),
+			this.extensionData.get("userExtensionsPath"),
+		);
 
-		// Read the paths and create arrays of the extensions.
-		const userExtensions = this.readExtensionsFromDirectory(userExtensionsPath);
-		const builtInExtensions = this.readExtensionsFromDirectory(builtInExtensionsPath);
+		// Collect all extensions (including built-in ones) to an array.
+		//const extensions: ExtensionInfo[] = await Promise.all(extReadTasks).then((arrs) => arrs.flat(1));
+		const extensions: ExtensionInfo[] = await Promise
+			.all(extensionDirs.map((dir) => this.readExtensionsFromDirectory(dir)))
+			.then((arrs) => arrs.flat(1));
 
-		logger.info("Finished reading extensions");
-
-		// Add all installed extensions (including built-in ones) into the extensions array.
-		// If running WSL, these will be the WSL-installed extensions.
-		extensions.push(...builtInExtensions, ...userExtensions);
+		logger.info(`Finished reading ${extensions.length} extensions`);
 
 		// Loop through all installed extensions, including built-in extensions
 		for (let extension of extensions) {
@@ -397,7 +397,7 @@ export class Configuration {
 								// Create a new object with the 1st array element [0] as the
 								// value of the open key, and the 2nd element [1] as the value
 								// of the close key.
-								const autoClosingPairsObj = {open: item[0], close: item[1]};
+								const autoClosingPairsObj = { open: item[0], close: item[1] };
 								// Push the object into the new array.
 								autoClosingPairsArray.push(autoClosingPairsObj);
 							}
@@ -420,7 +420,7 @@ export class Configuration {
 						// Only merge if both configs have comments
 						if (existingConfig.comments && config.comments) {
 							// Start with existing comments as base
-							const mergedComments = {...existingConfig.comments};
+							const mergedComments = { ...existingConfig.comments };
 
 							// Merge each comment type from new config.
 							Object.entries(config.comments).forEach(([key, value]) => {
@@ -441,7 +441,7 @@ export class Configuration {
 						// If only one config has comments or neither has comments...
 						else {
 							// Just merge the configs directly.
-							config = {...existingConfig, ...config};
+							config = { ...existingConfig, ...config };
 						}
 					}
 
@@ -474,37 +474,38 @@ export class Configuration {
 	 *
 	 * @param {string} extensionsPath The path where extensions are stored.
 	 *
-	 * @returns {Array<{ id: string; extensionPath: string; packageJSON: IPackageJson }>}
+	 * @returns {Array<ExtensionInfo>}
 	 */
-	private readExtensionsFromDirectory(extensionsPath: string): Array<{id: string; extensionPath: string; packageJSON: IPackageJson}> {
-		// Create an array to hold the found extensions.
-		const foundExtensions: Array<{id: string; extensionPath: string; packageJSON: IPackageJson}> = [];
-
-		fs.readdirSync(extensionsPath).forEach((extensionName) => {
-			const extensionPath = path.join(extensionsPath, extensionName);
-
-			// If the extensionName is a directory...
-			if (fs.statSync(extensionPath).isDirectory()) {
-				// If the extensionName starts with a dot, skip it.
-				if (extensionName.startsWith(".")) {
-					return;
-				}
-
-				// Get the package.json file path.
-				const packageJSONPath = path.join(extensionPath, "package.json");
-
-				// If the package.json file exists...
-				if (fs.existsSync(packageJSONPath)) {
-					const packageJSON: IPackageJson = utils.readJsonFile(packageJSONPath);
-
-					const id = `${packageJSON.publisher}.${packageJSON.name}`;
-
-					// Push the extension data object into the array.
-					foundExtensions.push({id, extensionPath, packageJSON});
-				}
+	private async readExtensionsFromDirectory(extensionsPath: string): Promise<ExtensionInfo[]> {
+		//logger.debug(`Read extensions in ${extensionsPath}`);
+		const entries = await fsPromises.readdir(extensionsPath, {encoding: "utf8"});
+		const ret: (ExtensionInfo | null)[] = await Promise.all(entries.map(async (name) => {
+			// If the extensionName starts with a dot, skip it.
+			if (name.startsWith(".")) {
+				return null;
 			}
-		});
 
+			const extensionPath = path.join(extensionsPath, name);
+			const packageJSONPath = path.join(extensionPath, "package.json");
+
+			return await utils.readJsonFileAsync(packageJSONPath)
+				.then((packageJSON: IPackageJson) => {
+					const id = `${packageJSON.publisher}.${packageJSON.name}`
+					const extInfo: ExtensionInfo = { id, extensionPath, packageJSON };
+					return extInfo;
+				})
+				.catch((err) => {
+					if (["ENOENT", "ENOTDIR"].includes(err.code)) {
+						// skip nonexistent files, or if `name` was a file rather than a directory
+					} else {
+						// otherwise propagate the error
+						throw err;
+					}
+					return null;
+				});
+		}));
+
+		const foundExtensions = ret.filter(x => x !== null);
 		return foundExtensions;
 	}
 
@@ -703,7 +704,7 @@ export class Configuration {
 		const internalLangConfig: vscode.LanguageConfiguration = this.getLanguageConfig(langId);
 		const defaultMultiLineConfig: any = utils.readJsonFile(`${__dirname}/../../config/default-multi-line-config.json`);
 
-		let langConfig = {...internalLangConfig};
+		let langConfig = { ...internalLangConfig };
 
 		if (multiLine) {
 			langConfig.autoClosingPairs = utils.mergeArraysBy(defaultMultiLineConfig.autoClosingPairs, internalLangConfig?.autoClosingPairs, "open");
@@ -756,7 +757,7 @@ export class Configuration {
 			if (!Object.hasOwn(langConfig, "comments") || !Object.hasOwn(langConfig.comments, "lineComment")) {
 				// Add the singleLineStyle to the lineComments key and make sure any
 				// blockComments aren't overwritten.
-				langConfig.comments = {...langConfig.comments, lineComment: singleLineStyle};
+				langConfig.comments = { ...langConfig.comments, lineComment: singleLineStyle };
 			}
 		}
 
@@ -999,7 +1000,7 @@ export class Configuration {
 			},
 			"Other System Env Variables": process.env,
 		};
-		logger.debug("Environment:", env);
+		//logger.debug("Environment:", env);
 
 		// Log the extension's user configuration settings.
 		logger.debug("Configuration settings:", this.getConfiguration());

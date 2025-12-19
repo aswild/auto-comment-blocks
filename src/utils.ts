@@ -1,4 +1,5 @@
 import * as fs from "node:fs";
+import * as fsPromises from "node:fs/promises";
 import * as jsonc from "jsonc-parser";
 import {logger} from "./logger";
 import {window} from "vscode";
@@ -12,15 +13,40 @@ import {window} from "vscode";
  * @throws Will throw an error if the JSON file cannot be parsed.
  */
 export function readJsonFile(filepath: string): any {
-	const jsonErrors: jsonc.ParseError[] = [];
+	const fileContent = fs.readFileSync(filepath, {encoding: "utf8"});
+	return parseJsonContent(fileContent, filepath);
+}
 
-	const fileContent = fs
-		.readFileSync(filepath, {encoding: "utf8"})
-		.toString()
-		.replace(/^\uFEFF/, ""); // Remove BOM if present.
+/**
+ * Read the file and parse the JSON asynchronously.
+ *
+ * @returns {Promise<any>} The JSON file content as an object.
+ * @throws Will throw an error if the JSON file cannot be parsed.
+ */
+export async function readJsonFileAsync(filepath: string): Promise<any> {
+	return fsPromises
+		.readFile(filepath, {encoding: "utf8"})
+		.then((content) => parseJsonContent(content, filepath));
+}
+
+/**
+ * Parse JSON (or jsonc) content from a file and return the JSON data as an object.
+ *
+ * @param {string} fileContent The JSON data as a string.
+ * @param {string} filepath The file path this data was read from (for constructing error messages).
+ *
+ * @returns {any} The JSON file content as an object.
+ * @throws Will throw an error if the JSON file cannot be parsed.
+ */
+function parseJsonContent(fileContent: string, filepath?: string): any {
+	fileContent = fileContent.replace(/^\uFEFF/, ""); // Remove BOM if present.
+	const jsonErrors: jsonc.ParseError[] = [];
 	const jsonContents = jsonc.parse(fileContent, jsonErrors, {allowEmptyContent: true}) ?? {};
 
 	if (jsonErrors.length > 0) {
+		if (!filepath) {
+			filepath = "[Unknown file]";
+		}
 		const errorMessages = constructJsonParseErrorMsg(filepath, fileContent, jsonErrors);
 		const errorMsg = "Failed to parse a required JSON file";
 		const error = new Error(`${errorMsg}: "${filepath}"\n\n\tParse Errors:\n\n${errorMessages}\n\tStack Trace:`);

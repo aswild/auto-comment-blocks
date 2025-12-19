@@ -12,7 +12,8 @@ let configuration = new Configuration();
 
 const disposables: vscode.Disposable[] = [];
 
-export function activate(context: vscode.ExtensionContext) {
+export async function activate(context: vscode.ExtensionContext) {
+	await configuration.load(extensionData);
 	const configureCommentBlocksDisposable = configuration.configureCommentBlocks();
 	const registerCommandsDisposable = configuration.registerCommands();
 
