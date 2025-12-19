@@ -86,7 +86,7 @@ class Logger {
 	 * @param {string} message The message to be logged.
 	 * @param {unknown} data Extra data that is useful for debugging, like an object or array.
 	 */
-	public debug(message: string, data: unknown): void {
+	public debug(message: string, data?: unknown): void {
 		if (this.debugMode) {
 			this.logMessage("DEBUG", message, data);
 		}
@@ -113,7 +113,7 @@ class Logger {
 		if (!this.outputChannel) {
 			this.setupOutputChannel();
 		}
-		const time = new Date().toLocaleTimeString();
+		const time = new Date().toISOString();
 
 		// Output the log message to the output channel.
 		this.outputChannel.appendLine(`["${level}" - ${time}] ${message}`);
