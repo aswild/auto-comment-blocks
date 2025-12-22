@@ -300,6 +300,8 @@ export class Configuration {
 	private findAllLanguageConfigFilePaths() {
 		const extensions: any[] = [];
 
+		logger.info("Start reading extensions");
+
 		// If running in WSL...
 		if (isWsl) {
 			// Get the Windows user and built-in extensions paths.
@@ -320,6 +322,8 @@ export class Configuration {
 		// Read the paths and create arrays of the extensions.
 		const userExtensions = this.readExtensionsFromDirectory(userExtensionsPath);
 		const builtInExtensions = this.readExtensionsFromDirectory(builtInExtensionsPath);
+
+		logger.info("Finished reading extensions");
 
 		// Add all installed extensions (including built-in ones) into the extensions array.
 		// If running WSL, these will be the WSL-installed extensions.
