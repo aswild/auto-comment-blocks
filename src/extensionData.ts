@@ -1,5 +1,6 @@
 import * as vscode from "vscode";
 import * as path from "path";
+import * as fs from "node:fs";
 import {IPackageJson} from "package-json-type";
 
 import {isWsl, readJsonFile} from "./utils";
@@ -116,7 +117,8 @@ export class ExtensionData {
 		// Only set these if running in WSL
 		if (isWsl()) {
 			this.extensionDiscoveryPaths.set("WindowsUserExtensionsPathFromWsl", path.dirname(process.env.VSCODE_WSL_EXT_LOCATION!));
-			this.extensionDiscoveryPaths.set("WindowsBuiltInExtensionsPathFromWsl", path.join(process.env.VSCODE_CWD!, "resources/app/extensions"));
+			const vscodeExtensionsDir = fs.globSync(`${process.env.VSCODE_CWD!}/*/resources/app/extensions`)[0];
+			this.extensionDiscoveryPaths.set("WindowsBuiltInExtensionsPathFromWsl", vscodeExtensionsDir);
 		}
 	}
 
