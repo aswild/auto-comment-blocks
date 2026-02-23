@@ -68,10 +68,9 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 20.x
-          cache: "npm"
 
       - name: Install Dependencies
-        run: npm ci
+        run: npm install
 
       - name: Update Package.json Version
         run: |
@@ -146,13 +145,13 @@ jobs:
           set -e  # Exit on any error
 
           # Stage and commit changes
-          git add package.json package-lock.json || {
+          git add package.json || {
             echo "❌ Failed to stage files"
             exit 1
           }
 
           # Create commit message
-          COMMIT_MESSAGE="chore: version bump
+          COMMIT_MESSAGE="chore: version bump"
 
           git commit -m "$COMMIT_MESSAGE" || {
             echo "❌ Failed to commit changes"
@@ -280,7 +279,7 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 20
-      - run: npm ci
+      - run: npm install
 
       - name: Publish to VS Code Marketplace
         uses: HaaLeo/publish-vscode-extension@v2
