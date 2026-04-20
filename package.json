@@ -2,7 +2,7 @@
 	"name": "automatic-comment-blocks",
 	"displayName": "Automatic Comment Blocks",
 	"description": "Provides block comment completion for Javadoc-style multi-line comments and single-line comment blocks for most officially supported languages.",
-	"version": "1.1.14+wild0",
+	"version": "1.1.15+wild0",
 	"publisher": "ycodetech",
 	"homepage": "https://github.com/ycodetech/auto-comment-blocks",
 	"repository": {
@@ -16,7 +16,7 @@
 		"theme": "dark"
 	},
 	"engines": {
-		"vscode": "^1.107.0"
+		"vscode": "^1.110.0"
 	},
 	"keywords": [
 		"auto",
@@ -124,7 +124,7 @@
 	},
 	"devDependencies": {
 		"@types/node": "^25.0.3",
-		"@types/vscode": "^1.107.0",
+		"@types/vscode": "^1.110.0",
 		"@vscode/vsce": "^3.7.1",
 		"esbuild": "^0.27.0",
 		"typescript": "^5.7"
