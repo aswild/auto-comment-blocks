@@ -1,4 +1,4 @@
-# Automatic Comment Blocks
+# <img src="https://raw.githubusercontent.com/yCodeTech/auto-comment-blocks/master/img/icon.png" width="50" height="50" align="center"> Automatic Comment Blocks
 
 <a href="https://marketplace.visualstudio.com/items?itemName=yCodeTech.automatic-comment-blocks"><img alt="Visual Studio Marketplace Version" src="https://img.shields.io/open-vsx/v/yCodeTech/automatic-comment-blocks?label=version&style=for-the-badge"></a>&nbsp;&nbsp;
 <a href="https://marketplace.visualstudio.com/items?itemName=yCodeTech.automatic-comment-blocks"><img alt="Visual Studio Marketplace Installs" src="https://img.shields.io/badge/VS_Code_Installs-~1.5k-brightgreen?style=for-the-badge"></a>&nbsp;&nbsp;
@@ -6,9 +6,9 @@
 
 A VScode extension that provides block comment completion for Javadoc-style multi-line comments and single-line comment blocks for [_all_ supported languages](#as-of-v110-this-extension-now-automatically-adds-language-support-and-no-longer-keeps-hardcoded-language-support).
 
-![auto-block-comments](https://raw.githubusercontent.com/yCodeTech/auto-comment-blocks/master/img/auto-comment-blocks.gif)
+<img src="https://raw.githubusercontent.com/yCodeTech/auto-comment-blocks/master/img/auto-comment-blocks.gif" height="200">&nbsp;
 
-This is a fork of the original by [kevb34ns](https://github.com/kevb34ns/auto-comment-blocks) with lots of additional support.
+This fork of the [original by kevb34ns](https://github.com/kevb34ns/auto-comment-blocks) is published and maintained by **@yCodeTech**.
 
 View the extension on [VScode Marketplace](https://marketplace.visualstudio.com/items?itemName=yCodeTech.automatic-comment-blocks) and on [Open VSX Registry](https://open-vsx.org/extension/ycodetech/automatic-comment-blocks)
 
@@ -88,7 +88,7 @@ View the [Changelog](/CHANGELOG.md) for more detailed changes/additions/removals
 
 These VScode settings are required to allow the extension to work correctly. So please make sure to change them accordingly.
 
--   `"editor.autoIndent": "advanced"`
+-   `"editor.autoIndent": "advanced"` (see https://github.com/yCodeTech/auto-comment-blocks/issues/6#issuecomment-3104256600 for details.)
 
 ## Usage
 
